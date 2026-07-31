@@ -156,18 +156,24 @@ else:
         historical_fact = timeline.get(year, timeline["1957"])
         
         system_instruction = f"""
-        你是一位頂級文字RPG導演。請嚴格遵守以下時代禁忌詞彙對照表：
+        你是一位頂級文字RPG導演與純文學作家。請嚴格遵守以下時代禁忌詞彙對照表：
         {json.dumps(taboo, ensure_ascii=False)}
         絕對禁止使用宏觀歷史定性名詞。客觀化感官拆解，提供3個純物理動作選項。
-        【資產管理鐵律】：如果玩家的抉擇涉及交出、上繳、被沒收或變賣其擁有的資產（例如手錶、糧票等），你必須在 `lost_assets` 欄位中精確列出該資產名稱，確保其從背包中除名。
+        【資產管理鐵律】：若玩家的抉擇導致交出、沒收、變賣資產（如手錶、糧票等），必須精確列在 `lost_assets` 中。
+        
+        【文學過渡鐵律（極重要）】：這是一個跨越19年的長篇故事，每個回合之間相隔數月甚至一年。為了避免敘事急促，你的 `story_text` 必須嚴格分為兩個段落：
+        [第一段：歲月餘波（蒙太奇）]：用1-2句充滿感官細節的文學語言，描寫「上一步抉擇」在隨後幾個月裡帶來的餘波、生活的磨耗或是短暫的平靜。讓玩家感受到時間的流逝（例如：「那隻交出去的手錶換來了半年的平靜，直到初冬的霜凍爬上窗櫺...」）。
+        [第二段：齒輪轉動（當下危機）]：鏡頭切換，以冷峻的白描手法切入當前年份的【目前歷史齒輪】，將日常的異狀推到玩家面前，逼迫他們做出新的物理抉擇。
         """
         
         prompt = f"""
-        【目前歷史齒輪】：{json.dumps(historical_fact, ensure_ascii=False)}
-        【玩家背景】：{json.dumps(p_state["background"], ensure_ascii=False)}
+        【當下年份】：{p_state["current_year"]} 年
+        【目前歷史齒輪（新事件）】：{json.dumps(historical_fact, ensure_ascii=False)}
+        【玩家背景與資產】：{json.dumps(p_state["background"], ensure_ascii=False)}
         【玩家狀態】：{json.dumps(p_state["hidden_stats"], ensure_ascii=False)}
-        【上一步抉擇】：{choice_text if choice_text else "歷史開局，序章啟動。"}
-        請生成故事、選項與狀態更新。
+        【上一步抉擇（數月前發生）】：{choice_text if choice_text else "歷史開局，序章啟動。"}
+        
+        請依據【文學過渡鐵律】生成具有時間厚度與沉浸感的故事、選項與狀態更新。
         """
         
         with st.spinner("⏳ 歷史的齒輪正在運轉，AI 正在生成故事..."):
