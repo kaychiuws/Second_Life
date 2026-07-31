@@ -210,7 +210,7 @@ else:
     st.write(output["story_text"])
     st.markdown("---")
 
-    st.subheader("🤔 你的物理抉擇：")
+    st.subheader("🤔 你的抉擇：")
     if st.button(output["option_A"]):
         run_turn(output["option_A"])
         st.rerun()
