@@ -12,7 +12,7 @@ st.sidebar.header("🔑 系統設定")
 api_key_input = st.sidebar.text_input("請輸入你的 Google AI Studio API Key", type="password")
 
 if not api_key_input:
-    st.warning("請先在左側欄位輸入您的 API Key 才能啟動遊戲。[cite: 1]")
+    st.warning("請先在左側欄位輸入您的 API Key 才能啟動遊戲。")
     st.stop()
 
 client = genai.Client(api_key=api_key_input)
@@ -64,18 +64,18 @@ class GameResponse(BaseModel):
     npc_updates: NPCUpdates
 
 if not st.session_state.game_started:
-    st.header("👤 角色創建與戶籍登記 (1957年)[cite: 1]")
-    st.write("在那個時代，你的出身與地域將決定你的一切。請謹慎選擇[cite: 1]。")
+    st.header("👤 角色創建與戶籍登記 (1957年)")
+    st.write("在那個時代，你的出身與地域將決定你的一切。請謹慎選擇。")
 
     with st.form("character_creation_form"):
-        location = st.selectbox("居住地域[cite: 1]", config["allowed_locations"])
+        location = st.selectbox("居住地域", config["allowed_locations"])
         
         loc_rules = config["constraints_matrix"]["location_rules"].get(location, {})
         allowed_eth = loc_rules.get("allowed_ethnicities", config["allowed_ethnicities"])
-        ethnicity = st.selectbox("種族[cite: 1]", allowed_eth)
+        ethnicity = st.selectbox("種族", allowed_eth)
         
         origins = [bg["display_name"] for bg in config["allowed_backgrounds"]]
-        origin = st.selectbox("家庭出身 (階級成分)[cite: 1]", origins)
+        origin = st.selectbox("家庭出身 (階級成分)", origins)
         
         forbidden_loc = loc_rules.get("forbidden_professions", [])
         ori_rules = config["constraints_matrix"]["origin_rules"].get(origin, {})
@@ -89,9 +89,9 @@ if not st.session_state.game_started:
         if not available_profs:
             available_profs = ["街道生產組臨時工", "基層公社邊緣農民"]
             
-        profession = st.selectbox("勞動崗位 (職業)[cite: 1]", available_profs)
+        profession = st.selectbox("勞動崗位 (職業)", available_profs)
         
-        st.write("申報個人資產 (可複選)[cite: 1]:")
+        st.write("申報個人資產 (可複選):")
         chosen_assets = []
         forbidden_asset_types = loc_rules.get("forbidden_asset_types", [])
         
@@ -130,10 +130,10 @@ else:
     p_state = st.session_state.player_state
     
     if p_state["hidden_stats"]["health"] <= 0:
-        st.error("【肉體枯竭】你在無盡的飢餓與肉體折磨中倒下，未能熬過這個時代。[cite: 1]")
+        st.error("【肉體枯竭】你在無盡的飢餓與肉體折磨中倒下，未能熬過這個時代。")
         st.stop()
     if p_state["current_year"] > 1976:
-        st.success("【時代落幕】1976年，狂飆的歷史終於停息，你活著見證了結束。[cite: 1]")
+        st.success("【時代落幕】1976年，狂飆的歷史終於停息，你活著見證了結束。")
         st.stop()
 
     def run_turn(choice_text=""):
@@ -143,18 +143,18 @@ else:
         system_instruction = f"""
         你是一位頂級文字RPG導演。請嚴格遵守以下時代禁忌詞彙對照表：
         {json.dumps(taboo, ensure_ascii=False)}
-        絕對禁止使用宏觀歷史定性名詞。客觀化感官拆解，提供3個純物理動作選項。[cite: 1]
+        絕對禁止使用宏觀歷史定性名詞。客觀化感官拆解，提供3個純物理動作選項。
         """
         
         prompt = f"""
         【目前歷史齒輪】：{json.dumps(historical_fact, ensure_ascii=False)}
         【玩家背景】：{json.dumps(p_state["background"], ensure_ascii=False)}
         【玩家狀態】：{json.dumps(p_state["hidden_stats"], ensure_ascii=False)}
-        【上一步抉擇】：{choice_text if choice_text else "歷史開局，序章啟動。[cite: 1]"}
-        請生成故事、選項與狀態更新。[cite: 1]
+        【上一步抉擇】：{choice_text if choice_text else "歷史開局，序章啟動。"}
+        請生成故事、選項與狀態更新。
         """
         
-        with st.spinner("⏳ 歷史的齒輪正在運轉，AI 正在生成故事...[cite: 1]"):
+        with st.spinner("⏳ 歷史的齒輪正在運轉，AI 正在生成故事..."):
             response = client.models.generate_content(
                 model='gemini-3.5-flash',
                 contents=prompt,
@@ -184,19 +184,19 @@ else:
         run_turn()
         st.rerun()
 
-    st.markdown(f"### 📍 當前年份：{p_state['current_year']} 年[cite: 1]")
+    st.markdown(f"### 📍 當前年份：{p_state['current_year']} 年")
     
     h, s, c = p_state["hidden_stats"]["health"], p_state["hidden_stats"]["sanity"], p_state["hidden_stats"]["complicity"]
-    if h <= 40: st.warning("⚠️ 【視覺異變】螢幕邊緣出現暗角，畫面褪為灰白，文字明暗閃爍...[cite: 1]")
-    if s <= 35: st.warning("⚠️ 【視覺異變】排版錯位失調，關鍵名詞閃爍為血紅色...[cite: 1]")
-    if c >= 40: st.error("⚠️ 【視覺異變】螢幕底層滲出暗褐色墨暈印記，無法洗刷...[cite: 1]")
+    if h <= 40: st.warning("⚠️ 【視覺異變】螢幕邊緣出現暗角，畫面褪為灰白，文字明暗閃爍...")
+    if s <= 35: st.warning("⚠️ 【視覺異變】排版錯位失調，關鍵名詞閃爍為血紅色...")
+    if c >= 40: st.error("⚠️ 【視覺異變】螢幕底層滲出暗褐色墨暈印記，無法洗刷...")
 
     output = st.session_state.current_output
     st.markdown("---")
     st.write(output["story_text"])
     st.markdown("---")
 
-    st.subheader("🤔 你的物理抉擇：[cite: 1]")
+    st.subheader("🤔 你的物理抉擇：")
     if st.button(output["option_A"]):
         run_turn(output["option_A"])
         st.rerun()
