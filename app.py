@@ -67,64 +67,63 @@ if not st.session_state.game_started:
     st.header("👤 角色創建與戶籍登記 (1957年)")
     st.write("在那個時代，你的出身與地域將決定你的一切。請謹慎選擇。")
 
-    with st.form("character_creation_form"):
-        location = st.selectbox("居住地域", config["allowed_locations"])
+    # 移除了 st.form，讓選單可以即時連動刷新
+    location = st.selectbox("居住地域", config["allowed_locations"], key="loc_box")
+    
+    loc_rules = config["constraints_matrix"]["location_rules"].get(location, {})
+    allowed_eth = loc_rules.get("allowed_ethnicities", config["allowed_ethnicities"])
+    ethnicity = st.selectbox("種族", allowed_eth, key="eth_box")
+    
+    origins = [bg["display_name"] for bg in config["allowed_backgrounds"]]
+    origin = st.selectbox("家庭出身 (階級成分)", origins, key="ori_box")
+    
+    forbidden_loc = loc_rules.get("forbidden_professions", [])
+    ori_rules = config["constraints_matrix"]["origin_rules"].get(origin, {})
+    forbidden_ori = ori_rules.get("forbidden_professions", [])
+    
+    available_profs = []
+    for cat, profs in config["allowed_professions"].items():
+        for p in profs:
+            if p not in forbidden_loc and p not in forbidden_ori:
+                available_profs.append(p)
+    if not available_profs:
+        available_profs = ["街道生產組臨時工", "基層公社邊緣農民"]
         
-        loc_rules = config["constraints_matrix"]["location_rules"].get(location, {})
-        allowed_eth = loc_rules.get("allowed_ethnicities", config["allowed_ethnicities"])
-        ethnicity = st.selectbox("種族", allowed_eth)
-        
-        origins = [bg["display_name"] for bg in config["allowed_backgrounds"]]
-        origin = st.selectbox("家庭出身 (階級成分)", origins)
-        
-        forbidden_loc = loc_rules.get("forbidden_professions", [])
-        ori_rules = config["constraints_matrix"]["origin_rules"].get(origin, {})
-        forbidden_ori = ori_rules.get("forbidden_professions", [])
-        
-        available_profs = []
-        for cat, profs in config["allowed_professions"].items():
-            for p in profs:
-                if p not in forbidden_loc and p not in forbidden_ori:
-                    available_profs.append(p)
-        if not available_profs:
-            available_profs = ["街道生產組臨時工", "基層公社邊緣農民"]
-            
-        profession = st.selectbox("勞動崗位 (職業)", available_profs)
-        
-        st.write("申報個人資產 (可複選):")
-        chosen_assets = []
-        forbidden_asset_types = loc_rules.get("forbidden_asset_types", [])
-        
-        for a_type, a_list in config["allowed_assets"].items():
-            if a_type in forbidden_asset_types:
-                continue
-            st.subheader(f"--- {a_type} ---")
-            for asset in a_list:
-                if st.checkbox(asset, key=f"asset_{asset}"):
-                    chosen_assets.append(asset)
-        
-        submitted = st.form_submit_button("確定登記並進入歷史")
-        
-        if submitted:
-            st.session_state.player_state = {
-                "background": {
-                    "location": location,
-                    "ethnicity": ethnicity,
-                    "origin": origin,
-                    "profession": profession,
-                    "assets": chosen_assets
-                },
-                "hidden_stats": {"health": 80, "sanity": 70, "complicity": 0},
-                "current_year": 1957,
-                "game_stage": "prologue",
-                "npc_roster": {
-                    "oppressor": {"name": "未設定", "affinity": 30, "moral_alignment": 20, "status": "alive"},
-                    "dependent": {"name": "未設定", "affinity": 80, "moral_alignment": 80, "status": "alive"},
-                    "ally": {"name": "未結識", "affinity": 60, "moral_alignment": 50, "status": "alive"}
-                }
+    profession = st.selectbox("勞動崗位 (職業)", available_profs, key="prof_box")
+    
+    st.write("申報個人資產 (可複選):")
+    chosen_assets = []
+    forbidden_asset_types = loc_rules.get("forbidden_asset_types", [])
+    
+    for a_type, a_list in config["allowed_assets"].items():
+        if a_type in forbidden_asset_types:
+            continue
+        st.subheader(f"--- {a_type} ---")
+        for asset in a_list:
+            if st.checkbox(asset, key=f"asset_{asset}"):
+                chosen_assets.append(asset)
+    
+    st.markdown("---")
+    if st.button("確定登記並進入歷史", type="primary"):
+        st.session_state.player_state = {
+            "background": {
+                "location": location,
+                "ethnicity": ethnicity,
+                "origin": origin,
+                "profession": profession,
+                "assets": chosen_assets
+            },
+            "hidden_stats": {"health": 80, "sanity": 70, "complicity": 0},
+            "current_year": 1957,
+            "game_stage": "prologue",
+            "npc_roster": {
+                "oppressor": {"name": "未設定", "affinity": 30, "moral_alignment": 20, "status": "alive"},
+                "dependent": {"name": "未設定", "affinity": 80, "moral_alignment": 80, "status": "alive"},
+                "ally": {"name": "未結識", "affinity": 60, "moral_alignment": 50, "status": "alive"}
             }
-            st.session_state.game_started = True
-            st.rerun()
+        }
+        st.session_state.game_started = True
+        st.rerun()
             
 else:
     p_state = st.session_state.player_state
