@@ -67,39 +67,45 @@ if not st.session_state.game_started:
     st.header("👤 角色創建與戶籍登記 (1957年)")
     st.write("在那個時代，你的出身與地域將決定你的一切。請謹慎選擇。")
 
-    # 移除了 st.form，讓選單可以即時連動刷新
+    # 1. 選擇居住地域
     location = st.selectbox("居住地域", config["allowed_locations"], key="loc_box")
     
+    # 提前取得地域規則，確保後續選單能安全呼叫 loc_rules
     loc_rules = config["constraints_matrix"]["location_rules"].get(location, {})
+    
+    # 2. 選擇種族 (根據地域過濾)
     allowed_eth = loc_rules.get("allowed_ethnicities", config["allowed_ethnicities"])
     ethnicity = st.selectbox("種族", allowed_eth, key="eth_box")
     
+    # 3. 選擇家庭出身 (根據地域過濾禁忌出身)
     loc_forbidden_origins = loc_rules.get("forbidden_origins", [])
     all_origins = [bg["display_name"] for bg in config["allowed_backgrounds"]]
     available_origins = [o for o in all_origins if o not in loc_forbidden_origins]
     if not available_origins:
         available_origins = ["中農", "小商販"]
-        
     origin = st.selectbox("家庭出身 (階級成分)", available_origins, key="ori_box")
     
-    forbidden_loc = loc_rules.get("forbidden_professions", [])
+    # 取得出身規則
     ori_rules = config["constraints_matrix"]["origin_rules"].get(origin, {})
-    forbidden_ori = ori_rules.get("forbidden_professions", [])
+    
+    # 4. 選擇勞動崗位 (根據地域與出身雙重過濾)
+    forbidden_loc_profs = loc_rules.get("forbidden_professions", [])
+    forbidden_ori_profs = ori_rules.get("forbidden_professions", [])
     
     available_profs = []
     for cat, profs in config["allowed_professions"].items():
         for p in profs:
-            if p not in forbidden_loc and p not in forbidden_ori:
+            if p not in forbidden_loc_profs and p not in forbidden_ori_profs:
                 available_profs.append(p)
     if not available_profs:
         available_profs = ["街道生產組臨時工", "基層公社邊緣農民"]
         
     profession = st.selectbox("勞動崗位 (職業)", available_profs, key="prof_box")
     
+    # 5. 申報個人資產 (根據地域與出身雙重過濾禁忌資產)
     st.write("申報個人資產 (可複選):")
     chosen_assets = []
     
-    # 取得地域與出身的雙重禁忌資產類別
     loc_forbidden_assets = loc_rules.get("forbidden_asset_types", [])
     ori_forbidden_assets = ori_rules.get("forbidden_asset_types", [])
     all_forbidden_assets = set(loc_forbidden_assets + ori_forbidden_assets)
@@ -164,7 +170,7 @@ else:
         
         with st.spinner("⏳ 歷史的齒輪正在運轉，AI 正在生成故事..."):
             response = client.models.generate_content(
-                model='gemini-3.5-flash',
+                model='gemini-1.5-pro',
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     system_instruction=system_instruction,
