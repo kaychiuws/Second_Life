@@ -110,7 +110,7 @@ def run_turn(choice_text=""):
     
     with st.spinner("⏳ 歷史的齒輪正在運轉，AI 正在生成故事..."):
         response = client.models.generate_content(
-            model='gemini-1.5-pro',
+            model='gemini-3.5-flash',
             contents=prompt,
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
