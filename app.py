@@ -98,10 +98,14 @@ if not st.session_state.game_started:
     
     st.write("申報個人資產 (可複選):")
     chosen_assets = []
-    forbidden_asset_types = loc_rules.get("forbidden_asset_types", [])
+    
+    # 取得地域與出身的雙重禁忌資產類別
+    loc_forbidden_assets = loc_rules.get("forbidden_asset_types", [])
+    ori_forbidden_assets = ori_rules.get("forbidden_asset_types", [])
+    all_forbidden_assets = set(loc_forbidden_assets + ori_forbidden_assets)
     
     for a_type, a_list in config["allowed_assets"].items():
-        if a_type in forbidden_asset_types:
+        if a_type in all_forbidden_assets:
             continue
         st.subheader(f"--- {a_type} ---")
         for asset in a_list:
