@@ -70,13 +70,12 @@ if not st.session_state.game_started:
     # 移除了 st.form，讓選單可以即時連動刷新
     location = st.selectbox("居住地域", config["allowed_locations"], key="loc_box")
     
-    loc_forbidden_origins = loc_rules.get("forbidden_origins", [])
-    all_origins = [bg["display_name"] for bg in config["allowed_backgrounds"]]
-    available_origins = [o for o in all_origins if o not in loc_forbidden_origins]
-    if not available_origins:
-        available_origins = ["中農", "小商販"]
-        
-    origin = st.selectbox("家庭出身 (階級成分)", available_origins, key="ori_box")
+    loc_rules = config["constraints_matrix"]["location_rules"].get(location, {})
+    allowed_eth = loc_rules.get("allowed_ethnicities", config["allowed_ethnicities"])
+    ethnicity = st.selectbox("種族", allowed_eth, key="eth_box")
+    
+    origins = [bg["display_name"] for bg in config["allowed_backgrounds"]]
+    origin = st.selectbox("家庭出身 (階級成分)", origins, key="ori_box")
     
     forbidden_loc = loc_rules.get("forbidden_professions", [])
     ori_rules = config["constraints_matrix"]["origin_rules"].get(origin, {})
