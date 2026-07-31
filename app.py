@@ -201,9 +201,50 @@ else:
     st.markdown(f"### 📍 當前年份：{p_state['current_year']} 年")
     
     h, s, c = p_state["hidden_stats"]["health"], p_state["hidden_stats"]["sanity"], p_state["hidden_stats"]["complicity"]
-    if h <= 40: st.warning("⚠️ 【視覺異變】螢幕邊緣出現暗角，畫面褪為灰白，文字明暗閃爍...")
-    if s <= 35: st.warning("⚠️ 【視覺異變】排版錯位失調，關鍵名詞閃爍為血紅色...")
-    if c >= 40: st.error("⚠️ 【視覺異變】螢幕底層滲出暗褐色墨暈印記，無法洗刷...")
+    
+    dynamic_css = "<style>"
+    has_anomaly = False
+    
+    if h <= 40:
+        has_anomaly = True
+        # 肉體枯竭：畫面整體褪為灰白、出現暗角
+        dynamic_css += """
+        .stApp {
+            filter: grayscale(70%) contrast(120%);
+        }
+        """
+        st.warning("⚠️ 【視覺異變】螢幕邊緣出現深度暗角，畫面色彩褪為灰白...")
+        
+    if s <= 35:
+        has_anomaly = True
+        # 雙重思想崩潰：文字與關鍵名詞產生血紅色閃爍特效
+        dynamic_css += """
+        @keyframes bloodFlash {
+            0% { color: inherit; }
+            50% { color: #ff2b2b; text-shadow: 0 0 8px rgba(255, 0, 0, 0.8); }
+            100% { color: inherit; }
+        }
+        .stMarkdown p, .stMarkdown li {
+            animation: bloodFlash 1.5s infinite;
+        }
+        """
+        st.warning("⚠️ 【視覺異變】排版錯位失調，關鍵字句泛起血色脈動...")
+        
+    if c >= 40:
+        has_anomaly = True
+        # 共業沾血：背景底層滲出洗不掉的暗褐色墨暈
+        dynamic_css += """
+        .stApp {
+            background-color: #2b1810 !important;
+            transition: background-color 2s ease;
+        }
+        """
+        st.error("⚠️ 【視覺異變】螢幕底層滲出無法洗刷的暗褐色墨暈印記...")
+        
+    dynamic_css += "</style>"
+    
+    if has_anomaly:
+        st.markdown(dynamic_css, unsafe_allow_html=True)
 
     output = st.session_state.current_output
     st.markdown("---")
