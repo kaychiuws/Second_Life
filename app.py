@@ -62,6 +62,7 @@ class GameResponse(BaseModel):
     stat_changes: StatChanges
     sensory_tags_used: list[str]
     npc_updates: NPCUpdates
+    lost_assets: list[str] = Field(description="若玩家的抉擇導致某些初始資產被上繳、沒收、變賣或損毀，請在此列出該資產名稱，否則留空")
 
 if not st.session_state.game_started:
     st.header("👤 角色創建與戶籍登記 (1957年)")
@@ -158,6 +159,7 @@ else:
         你是一位頂級文字RPG導演。請嚴格遵守以下時代禁忌詞彙對照表：
         {json.dumps(taboo, ensure_ascii=False)}
         絕對禁止使用宏觀歷史定性名詞。客觀化感官拆解，提供3個純物理動作選項。
+        【資產管理鐵律】：如果玩家的抉擇涉及交出、上繳、被沒收或變賣其擁有的資產（例如手錶、糧票等），你必須在 `lost_assets` 欄位中精確列出該資產名稱，確保其從背包中除名。
         """
         
         prompt = f"""
@@ -187,6 +189,13 @@ else:
             p_state["hidden_stats"]["health"] = max(0, min(100, p_state["hidden_stats"]["health"] + changes["health_change"]))
             p_state["hidden_stats"]["sanity"] = max(0, min(100, p_state["hidden_stats"]["sanity"] + changes["sanity_change"]))
             p_state["hidden_stats"]["complicity"] = max(0, min(100, p_state["hidden_stats"]["complicity"] + changes["complicity_change"]))
+
+            # 🌟【資產動態扣除】若 AI 判定該回合失去了某些資產，從背包中永久移除
+            if "lost_assets" in output and output["lost_assets"]:
+                current_assets = p_state["background"]["assets"]
+                for item in output["lost_assets"]:
+                    if item in current_assets:
+                        current_assets.remove(item)
             
             if p_state["game_stage"] == "prologue":
                 p_state["current_year"] = 1958
@@ -199,6 +208,12 @@ else:
         st.rerun()
 
     st.markdown(f"### 📍 當前年份：{p_state['current_year']} 年")
+
+    # 顯示當前剩餘資產供玩家隨時檢視
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### 🎒 當前隨身資產")
+    for asset in p_state["background"]["assets"]:
+        st.sidebar.markdown(f"- {asset}")
     
     h, s, c = p_state["hidden_stats"]["health"], p_state["hidden_stats"]["sanity"], p_state["hidden_stats"]["complicity"]
     
