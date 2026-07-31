@@ -225,7 +225,7 @@ else:
             100% { color: inherit; }
         }
         .stMarkdown p, .stMarkdown li {
-            animation: bloodFlash 1.5s infinite;
+            animation: bloodFlash 5s infinite;
         }
         """
         st.warning("⚠️ 【視覺異變】排版錯位失調，關鍵字句泛起血色脈動...")
