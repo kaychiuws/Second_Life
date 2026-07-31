@@ -45,16 +45,19 @@
       "北京市": {
         "allowed_ethnicities": ["漢族"], 
         "forbidden_professions": ["基層公社農民 / 高級社社員", "街道辦主任 / 生產隊隊長"], 
+        "forbidden_origins": ["貧農", "雇農"],
         "forbidden_asset_types": ["農業生產與家禽類"]
       },
       "上海市": {
         "allowed_ethnicities": ["漢族"], 
         "forbidden_professions": ["基層公社農民 / 高級社社員", "街道辦主任 / 生產隊隊長"], 
+        "forbidden_origins": ["貧農", "雇農"],
         "forbidden_asset_types": ["農業生產與家禽類"]
       },
       "河南省信陽地區": {
         "allowed_ethnicities": ["漢族"], 
         "forbidden_professions": ["國營工廠工人 / 青年技工", "報社編輯 / 譯製片廠翻譯", "少年宮輔導員 / 孤兒院民政幹事"], 
+        "forbidden_origins": ["海外僑眷", "歸國科學家 / 留洋工程師"],
         "forbidden_asset_types": ["現代工業與體面物資"]
       },
       "廣東省寶安縣": {
@@ -63,7 +66,8 @@
       },
       "西藏拉薩": {
         "allowed_ethnicities": ["藏族", "漢族"], 
-        "allowed_professions": ["基層公社農民 / 高級社社員", "宗教場所知客僧 / 教堂司事", "基層教師 / 兒童保育員"]
+        "allowed_professions": ["基層公社農民 / 高級社社員", "宗教場所知客僧 / 教堂司事", "基層教師 / 兒童保育員"],
+        "forbidden_origins": ["海外僑眷", "右派分子"]
       },
       "黑龍江北大荒": {
         "allowed_ethnicities": ["漢族", "蒙古族"], 
