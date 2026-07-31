@@ -6,7 +6,7 @@ from google.genai import types
 from pydantic import BaseModel, Field
 
 # 1. 網頁版面設定
-st.set_page_config(page_title="1957-1976 歷史文字RPG", page_layout="centered")
+st.set_page_config(page_title="1957-1976 歷史文字RPG", layout="centered")
 st.title("📜 第二人生：歷史的齒輪")
 
 # 2. 側邊欄讓玩家輸入 API Key
