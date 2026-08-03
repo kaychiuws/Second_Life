@@ -173,7 +173,7 @@ else:
         請依據【文學過渡鐵律】與【JSON 輸出格式】生成具有時間厚度與沉浸感的故事、選項與狀態更新。
         """
         
-        with st.spinner("⏳ 歷史的齒輪正在運轉，Mistral 大腦正在推演故事..."):
+        with st.spinner("⏳ 歷史的齒輪正在運轉，正在推演故事..."):
             # 這裡改成 Mistral 的呼叫語法
             response = client.chat.complete(
                 model="mistral-large-latest", # 使用 Mistral 最強的模型確保文學品質
@@ -187,18 +187,33 @@ else:
             
             # 解析 Mistral 回傳的文字
             raw_text = response.choices[0].message.content
-            output = json.loads(raw_text)
+            
+            # 1. 預防 AI 手癢加上 Markdown 標記
+            if raw_text.startswith("```json"):
+                raw_text = raw_text.replace("```json", "", 1).removesuffix("```")
+            elif raw_text.startswith("```"):
+                raw_text = raw_text.replace("```", "", 1).removesuffix("```")
+                
+            output = json.loads(raw_text.strip())
+            
+            # 2. 預防 AI 多包了一層外殼 (有時候 AI 會輸出 {"GameResponse": {...}})
+            if "GameResponse" in output:
+                output = output["GameResponse"]
+                
             st.session_state.current_output = output
             
-            changes = output["stat_changes"]
-            p_state["hidden_stats"]["health"] = max(0, min(100, p_state["hidden_stats"]["health"] + changes["health_change"]))
-            p_state["hidden_stats"]["sanity"] = max(0, min(100, p_state["hidden_stats"]["sanity"] + changes["sanity_change"]))
-            p_state["hidden_stats"]["complicity"] = max(0, min(100, p_state["hidden_stats"]["complicity"] + changes["complicity_change"]))
+            # 3. 防禦性讀取：使用 .get() 確保就算 AI 漏寫，也會給予 0 的預設值，防止 KeyError 當機
+            changes = output.get("stat_changes", {"health_change": 0, "sanity_change": 0, "complicity_change": 0})
             
-            # 🌟 自動從背包中移除遺失的資產
-            if "lost_assets" in output and output["lost_assets"]:
+            p_state["hidden_stats"]["health"] = max(0, min(100, p_state["hidden_stats"]["health"] + changes.get("health_change", 0)))
+            p_state["hidden_stats"]["sanity"] = max(0, min(100, p_state["hidden_stats"]["sanity"] + changes.get("sanity_change", 0)))
+            p_state["hidden_stats"]["complicity"] = max(0, min(100, p_state["hidden_stats"]["complicity"] + changes.get("complicity_change", 0)))
+            
+            # 🌟 自動從背包中移除遺失的資產 (同樣使用 .get 防禦性讀取)
+            lost_assets = output.get("lost_assets", [])
+            if lost_assets:
                 current_assets = p_state["background"]["assets"]
-                for item in output["lost_assets"]:
+                for item in lost_assets:
                     if item in current_assets:
                         current_assets.remove(item)
             
