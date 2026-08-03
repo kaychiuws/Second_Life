@@ -177,16 +177,24 @@ else:
         你是一位頂級文字RPG導演與純文學作家。請嚴格遵守以下時代禁忌詞彙對照表：
         {json.dumps(taboo, ensure_ascii=False)}
         絕對禁止使用宏觀歷史定性名詞。客觀化感官拆解，提供3個純物理動作選項。
-        【資產同步鐵律（極其重要）】：請務必檢查【上一步抉擇】。只要玩家選擇了交出、沒收、變賣，必須精確列在 `lost_assets` 中。如果本回合沒有失去資產，你必須保持 `lost_assets` 為空陣列 `[]`，絕對不可將玩家仍擁有的資產填入！
+        【資產管理鐵律】：若玩家的抉擇導致交出、沒收、變賣資產，必須精確列在 `lost_assets` 中。
         
         {special_directive}
         
-        【文學過渡與排版鐵律（極重要）】：這是一個跨越19年的長篇故事。你的 `story_text` 必須嚴格包含三個起承轉合的段落。
-        ⚠️ 警告排版格式：請直接輸出三段文字，段落之間用 `\\n\\n` 隔開。**絕對禁止在文字中輸出任何小標題（例如「第一段」、「歲月餘波」、「時代氣候」、「命運迫近」等字眼），隱藏你的寫作結構，讓敘事自然流暢且不露痕跡！**
+        【數值平衡與等價交換鐵律（極重要）】：為了讓遊戲能維持60回合以上，你對 `stat_changes` 的給分必須極度克制！
+        1. 單次回合的數值變動範圍，通常應限制在 -15 到 +15 之間。絕對禁止一次扣除超過 20 點的健康或理智。
+        2. 你的3個選項必須體現「時代的折衷與生存的代價（黑暗三角）」。例如：
+           - 選擇「屈服/告密/搶奪」：健康增加 (+5)，但共業大幅上升 (+15)，理智下降 (-10)。
+           - 選擇「堅守道德/分享食物」：理智維持或微升 (+5)，但健康嚴重受損 (-15)。
+           - 選擇「沉默/逃避」：共業微升 (+5)，健康微降 (-5)，理智微降 (-5)。
+        讓玩家透過出賣良知（增加共業）或犧牲精神（降低理智）來換取苟活（維持健康）！
         
-        [段落一（蒙太奇）]：用1-2句充滿感官細節的文學語言，描寫「上一步抉擇」在隨後幾個月裡帶來的餘波、磨耗或短暫平靜。
-        [段落二（白描氣候）]：鏡頭切換。用極大的篇幅擴寫當前年份的【目前歷史齒輪】，細膩刻畫環境氣味、群眾眼神、社區壓抑或狂熱的氣氛，讓玩家沉浸。
-        [段落三（命運迫近）]：將時代宏大危機具象化為眼前逼迫玩家的一件日常小事或衝突，將刀刃架在玩家脖子上，逼迫他們做出抉擇。
+        【文學過渡與排版鐵律（極重要）】：這是一個跨越19年的長篇故事。你的 `story_text` 必須嚴格包含三個起承轉合的段落。
+        ⚠️ 警告排版格式：請直接輸出三段文字，段落之間用 `\\n\\n` 隔開。絕對禁止在文字中輸出任何小標題，隱藏你的寫作結構！
+        
+        {paragraph_one_rule}
+        [段落二（白描氣候）]：鏡頭切換。用極大的篇幅擴寫當前年份的【目前歷史齒輪】，細膩刻畫環境氣味、群眾眼神、社區壓抑或狂熱的氣氛。
+        [段落三（命運迫近）]：將時代宏大危機具象化為眼前逼迫玩家的一件日常小事或衝突，逼迫他們做出抉擇。
         """
         
         prompt = f"""
@@ -229,9 +237,21 @@ else:
             # 3. 防禦性提取數值
             changes = output.get("stat_changes", {"health_change": 0, "sanity_change": 0, "complicity_change": 0})
             
-            p_state["hidden_stats"]["health"] = max(0, min(100, p_state["hidden_stats"]["health"] + changes.get("health_change", 0)))
-            p_state["hidden_stats"]["sanity"] = max(0, min(100, p_state["hidden_stats"]["sanity"] + changes.get("sanity_change", 0)))
-            p_state["hidden_stats"]["complicity"] = max(0, min(100, p_state["hidden_stats"]["complicity"] + changes.get("complicity_change", 0)))
+            raw_h_change = changes.get("health_change", 0)
+            raw_s_change = changes.get("sanity_change", 0)
+            raw_c_change = changes.get("complicity_change", 0)
+            
+            # 🌟 時代的麻木（殘血保護機制）：當健康或理智低於 30 時，扣減傷害減半，模擬求生本能與心理麻木
+            current_h = p_state["hidden_stats"]["health"]
+            current_s = p_state["hidden_stats"]["sanity"]
+            
+            actual_h_change = int(raw_h_change / 2) if raw_h_change < 0 and current_h <= 30 else raw_h_change
+            actual_s_change = int(raw_s_change / 2) if raw_s_change < 0 and current_s <= 30 else raw_s_change
+            
+            # 結算數值
+            p_state["hidden_stats"]["health"] = max(0, min(100, current_h + actual_h_change))
+            p_state["hidden_stats"]["sanity"] = max(0, min(100, current_s + actual_s_change))
+            p_state["hidden_stats"]["complicity"] = max(0, min(100, p_state["hidden_stats"]["complicity"] + raw_c_change))
             
             # 🌟 4. 智能資產銷毀系統 (模糊比對)
             lost_assets = output.get("lost_assets", [])
