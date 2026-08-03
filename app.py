@@ -192,7 +192,7 @@ else:
         
         with st.spinner("⏳ 歷史的齒輪正在運轉，Google Gemini 正在推演故事..."):
             response = client.models.generate_content(
-                model='gemini-1.5-pro',
+                model='gemini-3.1-pro',
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     system_instruction=system_instruction,
