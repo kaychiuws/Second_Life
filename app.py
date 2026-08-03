@@ -307,8 +307,41 @@ else:
         st.warning("⚠️ 【視覺異變】螢幕邊緣出現深度暗角，畫面色彩褪為灰白...")
     if s <= 35:
         has_anomaly = True
-        dynamic_css += "@keyframes bloodFlash { 0% { color: inherit; } 50% { color: #ff2b2b; text-shadow: 0 0 8px rgba(255, 0, 0, 0.8); } 100% { color: inherit; } } .stMarkdown p, .stMarkdown li { animation: bloodFlash 1.5s infinite; }"
-        st.warning("⚠️ 【視覺異變】排版錯位失調，關鍵字句泛起血色脈動...")
+        # 使用多行字串 (Triple quotes) 讓 CSS 更容易閱讀與修改
+        dynamic_css += """
+        @keyframes bloodGlitch {
+            0%, 90%, 100% { 
+                transform: translate(0, 0) skew(0deg); 
+                color: #ff4d4d; /* 持續維持清晰的紅色 */
+                text-shadow: 0 0 2px rgba(255, 0, 0, 0.3); 
+            }
+            92% { 
+                transform: translate(-3px, 1px) skew(2deg); 
+                color: #ff0000; 
+                text-shadow: 2px 2px 0px rgba(139, 0, 0, 0.8); 
+            }
+            94% { 
+                transform: translate(3px, -2px) skew(-2deg); 
+                color: #ff4d4d; 
+                text-shadow: -2px -1px 0px rgba(139, 0, 0, 0.8); 
+            }
+            96% { 
+                transform: translate(-1px, 3px) skew(1deg); 
+                color: #ff0000; 
+                text-shadow: 0 0 5px rgba(255, 0, 0, 1); 
+            }
+            98% { 
+                transform: translate(2px, -1px) skew(-1deg); 
+                color: #ff4d4d; 
+                text-shadow: none; 
+            }
+        }
+        .stMarkdown p, .stMarkdown li { 
+            color: #ff4d4d !important; /* 強制覆蓋原本字體顏色 */
+            animation: bloodGlitch 4s infinite normal; /* 每4秒發作一次，發作時間極短 */
+        }
+        """
+        st.warning("⚠️ 【視覺異變】排版錯位失調，文字彷彿被撕裂般抽搐...")
     if c >= 40:
         has_anomaly = True
         dynamic_css += ".stApp { background-color: #2b1810 !important; transition: background-color 2s ease; }"
