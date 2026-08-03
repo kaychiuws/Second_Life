@@ -63,8 +63,7 @@ class GameResponse(BaseModel):
     stat_changes: StatChanges
     sensory_tags_used: list[str]
     npc_updates: NPCUpdates
-    lost_assets: list[str] = Field(description="若玩家的抉擇導致某些初始資產被上繳、沒收、變賣或損毀，請在此列出該資產名稱，否則留空")
-
+    lost_assets: list[str] = Field(description="若玩家的抉擇導致資產被上繳、沒收、變賣，請列出該資產名稱。如果本回合沒有失去任何資產，請務必回傳空陣列 []！絕對不可填入玩家仍擁有的資產！")
 if not st.session_state.game_started:
     st.header("👤 角色創建與戶籍登記 (1957年)")
     st.write("在那個時代，你的出身與地域將決定你的一切。請謹慎選擇。")
