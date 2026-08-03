@@ -64,6 +64,7 @@ class GameResponse(BaseModel):
     sensory_tags_used: list[str]
     npc_updates: NPCUpdates
     lost_assets: list[str] = Field(description="若玩家的抉擇導致資產被上繳、沒收、變賣，請列出該資產名稱。如果本回合沒有失去任何資產，請務必回傳空陣列 []！絕對不可填入玩家仍擁有的資產！")
+
 if not st.session_state.game_started:
     st.header("👤 角色創建與戶籍登記 (1957年)")
     st.write("在那個時代，你的出身與地域將決定你的一切。請謹慎選擇。")
@@ -177,6 +178,7 @@ else:
         你是一位頂級文字RPG導演與純文學作家。請嚴格遵守以下時代禁忌詞彙對照表：
         {json.dumps(taboo, ensure_ascii=False)}
         絕對禁止使用宏觀歷史定性名詞。客觀化感官拆解，提供3個純物理動作選項。
+        
         【資產同步鐵律（極其重要 - 嚴格區分過去與未來）】：
         1. 你只能根據【上一步抉擇】的結果來判定資產是否實質扣除！如果玩家的【上一步抉擇】導致了交出、被搶、變賣或摧毀，才將該資產名稱填入 `lost_assets`。
         2. 🛑 絕對禁止「超前沒收」！如果在你即將生成的 [段落三（命運迫近）] 或選項中，某項資產正被索要、面臨危機、或作為選項的籌碼，只要玩家「還沒有做出選擇」，就絕對不可將該資產寫入 `lost_assets`！必須等下一回合再行判定！
