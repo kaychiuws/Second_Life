@@ -63,7 +63,9 @@ class GameResponse(BaseModel):
     stat_changes: StatChanges
     sensory_tags_used: list[str]
     npc_updates: NPCUpdates
-    lost_assets: list[str] = Field(description="若玩家的抉擇導致資產被上繳、沒收、變賣，請列出該資產名稱。如果本回合沒有失去任何資產，請務必回傳空陣列 []！絕對不可填入玩家仍擁有的資產！")
+    assets_lost_from_previous_choice: list[str] = Field(
+        description="🛑 嚴格判定：只能根據玩家的【上一步抉擇】來結算！若上一步抉擇導致實質失去資產，填入名稱。若無，或是資產『現在』才面臨威脅（玩家還沒選），務必回傳 []！絕對禁止超前沒收！"
+    )
 
 if not st.session_state.game_started:
     st.header("👤 角色創建與戶籍登記 (1957年)")
@@ -269,9 +271,11 @@ else:
             p_state["hidden_stats"]["sanity"] = max(0, min(100, current_s + actual_s_change))
             p_state["hidden_stats"]["complicity"] = max(0, min(100, p_state["hidden_stats"]["complicity"] + raw_c_change))
             
-            # 🌟 4. 智能資產銷毀系統 (模糊比對)
-            lost_assets = output.get("lost_assets", [])
-            # 防呆機制：在序章（生成第一回合故事時），玩家尚未做出選擇，強制忽略 AI 的沒收幻覺
+            # 🌟 4. 智能資產銷毀系統 (終極防護版)
+            # 使用新的變數名稱來接收資料
+            lost_assets = output.get("assets_lost_from_previous_choice", [])
+            
+            # 防呆機制：在序章（生成第一回合故事時），玩家尚未做出選擇，強制忽略
             if lost_assets and p_state["game_stage"] != "prologue":
                 current_assets = p_state["background"]["assets"]
                 items_to_remove = []
