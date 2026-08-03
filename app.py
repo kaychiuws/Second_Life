@@ -15,7 +15,7 @@ if not api_key_input:
     st.warning("請先在左側欄位輸入您的 API Key 才能啟動遊戲。")
     st.stop()
 
-client = genai.Client(api_key=api_key_input)
+client = Mistral(api_key=api_key_input)
 
 @st.cache_data
 def load_configs():
@@ -177,18 +177,19 @@ else:
         """
         
         with st.spinner("⏳ 歷史的齒輪正在運轉，AI 正在生成故事..."):
-            response = client.models.generate_content(
-                model='gemini-2.0-flash',
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    system_instruction=system_instruction,
-                    response_mime_type="application/json",
-                    response_schema=GameResponse,
-                    temperature=0.75,
-                ),
+            response = client.chat.complete(
+                model="mistral-large-latest", # 使用 Mistral 最強的模型確保文學品質
+                messages=[
+                    {"role": "system", "content": system_instruction},
+                    {"role": "user", "content": prompt}
+                ],
+                response_format={"type": "json_object"}, # 強制 Mistral 只講 JSON
+                temperature=0.75,
             )
             
-            output = json.loads(response.text)
+            # 解析 Mistral 回傳的文字
+            raw_text = response.choices[0].message.content
+            output = json.loads(raw_text)
             st.session_state.current_output = output
             
             changes = output["stat_changes"]
