@@ -8,12 +8,13 @@ st.set_page_config(page_title="1957-1976 歷史文字RPG", layout="centered")
 st.title("📜 第二人生：歷史的齒輪")
 
 st.sidebar.header("🔑 系統設定")
-api_key_input = st.sidebar.text_input("請輸入你的 Google AI Studio API Key", type="password")
+api_key_input = st.sidebar.text_input("請輸入你的 Mistral API Key", type="password")
 
 if not api_key_input:
     st.warning("請先在左側欄位輸入您的 API Key 才能啟動遊戲。")
     st.stop()
 
+# 初始化 Mistral 客戶端
 client = Mistral(api_key=api_key_input)
 
 @st.cache_data
@@ -67,17 +68,12 @@ if not st.session_state.game_started:
     st.header("👤 角色創建與戶籍登記 (1957年)")
     st.write("在那個時代，你的出身與地域將決定你的一切。請謹慎選擇。")
 
-    # 1. 選擇居住地域
     location = st.selectbox("居住地域", config["allowed_locations"], key="loc_box")
-    
-    # 提前取得地域規則，確保後續選單能安全呼叫 loc_rules
     loc_rules = config["constraints_matrix"]["location_rules"].get(location, {})
     
-    # 2. 選擇種族 (根據地域過濾)
     allowed_eth = loc_rules.get("allowed_ethnicities", config["allowed_ethnicities"])
     ethnicity = st.selectbox("種族", allowed_eth, key="eth_box")
     
-    # 3. 選擇家庭出身 (根據地域過濾禁忌出身)
     loc_forbidden_origins = loc_rules.get("forbidden_origins", [])
     all_origins = [bg["display_name"] for bg in config["allowed_backgrounds"]]
     available_origins = [o for o in all_origins if o not in loc_forbidden_origins]
@@ -85,10 +81,7 @@ if not st.session_state.game_started:
         available_origins = ["中農", "小商販"]
     origin = st.selectbox("家庭出身 (階級成分)", available_origins, key="ori_box")
     
-    # 取得出身規則
     ori_rules = config["constraints_matrix"]["origin_rules"].get(origin, {})
-    
-    # 4. 選擇勞動崗位 (根據地域與出身雙重過濾)
     forbidden_loc_profs = loc_rules.get("forbidden_professions", [])
     forbidden_ori_profs = ori_rules.get("forbidden_professions", [])
     
@@ -102,7 +95,6 @@ if not st.session_state.game_started:
         
     profession = st.selectbox("勞動崗位 (職業)", available_profs, key="prof_box")
     
-    # 5. 申報個人資產 (根據地域與出身雙重過濾禁忌資產)
     st.write("申報個人資產 (可複選):")
     chosen_assets = []
     
@@ -154,15 +146,21 @@ else:
         year = str(p_state["current_year"])
         historical_fact = timeline.get(year, timeline["1957"])
         
+        # 取得我們定義的 JSON 結構圖，確保 Mistral 知道要怎麼回傳資料
+        schema_json = GameResponse.model_json_schema()
+        
         system_instruction = f"""
         你是一位頂級文字RPG導演與純文學作家。請嚴格遵守以下時代禁忌詞彙對照表：
         {json.dumps(taboo, ensure_ascii=False)}
         絕對禁止使用宏觀歷史定性名詞。客觀化感官拆解，提供3個純物理動作選項。
         【資產管理鐵律】：若玩家的抉擇導致交出、沒收、變賣資產（如手錶、糧票等），必須精確列在 `lost_assets` 中。
         
-        【文學過渡鐵律（極重要）】：這是一個跨越19年的長篇故事，每個回合之間相隔數月甚至一年。為了避免敘事急促，你的 `story_text` 必須嚴格分為兩個段落：
-        [第一段：歲月餘波（蒙太奇）]：用1-2句充滿感官細節的文學語言，描寫「上一步抉擇」在隨後幾個月裡帶來的餘波、生活的磨耗或是短暫的平靜。讓玩家感受到時間的流逝（例如：「那隻交出去的手錶換來了半年的平靜，直到初冬的霜凍爬上窗櫺...」）。
-        [第二段：齒輪轉動（當下危機）]：鏡頭切換，以冷峻的白描手法切入當前年份的【目前歷史齒輪】，將日常的異狀推到玩家面前，逼迫他們做出新的物理抉擇。
+        【文學過渡鐵律（極重要）】：這是一個跨越19年的長篇故事，每個回合之間相隔數月甚至一年。你的 `story_text` 必須分為兩段：
+        [第一段：歲月餘波（蒙太奇）]：用1-2句充滿感官細節的文學語言，描寫「上一步抉擇」在隨後幾個月裡的餘波，讓玩家感受時間流逝。
+        [第二段：齒輪轉動（當下危機）]：鏡頭切換，切入當前年份的【目前歷史齒輪】，將危機推到玩家面前。
+
+        【嚴格輸出格式】：你必須且只能輸出一個 JSON 格式的物件，請勿加入任何 Markdown 標記，必須嚴格符合以下結構：
+        {json.dumps(schema_json, ensure_ascii=False)}
         """
         
         prompt = f"""
@@ -172,10 +170,11 @@ else:
         【玩家狀態】：{json.dumps(p_state["hidden_stats"], ensure_ascii=False)}
         【上一步抉擇（數月前發生）】：{choice_text if choice_text else "歷史開局，序章啟動。"}
         
-        請依據【文學過渡鐵律】生成具有時間厚度與沉浸感的故事、選項與狀態更新。
+        請依據【文學過渡鐵律】與【JSON 輸出格式】生成故事。
         """
         
-        with st.spinner("⏳ 歷史的齒輪正在運轉，AI 正在生成故事..."):
+        with st.spinner("⏳ 歷史的齒輪正在運轉，Mistral 大腦正在推演故事..."):
+            # 這裡改成 Mistral 的呼叫語法
             response = client.chat.complete(
                 model="mistral-large-latest", # 使用 Mistral 最強的模型確保文學品質
                 messages=[
@@ -195,8 +194,8 @@ else:
             p_state["hidden_stats"]["health"] = max(0, min(100, p_state["hidden_stats"]["health"] + changes["health_change"]))
             p_state["hidden_stats"]["sanity"] = max(0, min(100, p_state["hidden_stats"]["sanity"] + changes["sanity_change"]))
             p_state["hidden_stats"]["complicity"] = max(0, min(100, p_state["hidden_stats"]["complicity"] + changes["complicity_change"]))
-
-            # 🌟【資產動態扣除】若 AI 判定該回合失去了某些資產，從背包中永久移除
+            
+            # 🌟 自動從背包中移除遺失的資產
             if "lost_assets" in output and output["lost_assets"]:
                 current_assets = p_state["background"]["assets"]
                 for item in output["lost_assets"]:
@@ -214,54 +213,30 @@ else:
         st.rerun()
 
     st.markdown(f"### 📍 當前年份：{p_state['current_year']} 年")
-
+    
     # 顯示當前剩餘資產供玩家隨時檢視
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 🎒 當前隨身資產")
     for asset in p_state["background"]["assets"]:
         st.sidebar.markdown(f"- {asset}")
-    
+
+    # 前端動態視覺異變 CSS
     h, s, c = p_state["hidden_stats"]["health"], p_state["hidden_stats"]["sanity"], p_state["hidden_stats"]["complicity"]
     
     dynamic_css = "<style>"
     has_anomaly = False
-    
     if h <= 40:
         has_anomaly = True
-        # 肉體枯竭：畫面整體褪為灰白、出現暗角
-        dynamic_css += """
-        .stApp {
-            filter: grayscale(70%) contrast(120%);
-        }
-        """
+        dynamic_css += ".stApp { filter: grayscale(70%) contrast(120%); }"
         st.warning("⚠️ 【視覺異變】螢幕邊緣出現深度暗角，畫面色彩褪為灰白...")
-        
     if s <= 35:
         has_anomaly = True
-        # 雙重思想崩潰：文字與關鍵名詞產生血紅色閃爍特效
-        dynamic_css += """
-        @keyframes bloodFlash {
-            0% { color: inherit; }
-            50% { color: #ff2b2b; text-shadow: 0 0 8px rgba(255, 0, 0, 0.8); }
-            100% { color: inherit; }
-        }
-        .stMarkdown p, .stMarkdown li {
-            animation: bloodFlash 5s infinite;
-        }
-        """
+        dynamic_css += "@keyframes bloodFlash { 0% { color: inherit; } 50% { color: #ff2b2b; text-shadow: 0 0 8px rgba(255, 0, 0, 0.8); } 100% { color: inherit; } } .stMarkdown p, .stMarkdown li { animation: bloodFlash 1.5s infinite; }"
         st.warning("⚠️ 【視覺異變】排版錯位失調，關鍵字句泛起血色脈動...")
-        
     if c >= 40:
         has_anomaly = True
-        # 共業沾血：背景底層滲出洗不掉的暗褐色墨暈
-        dynamic_css += """
-        .stApp {
-            background-color: #2b1810 !important;
-            transition: background-color 2s ease;
-        }
-        """
+        dynamic_css += ".stApp { background-color: #2b1810 !important; transition: background-color 2s ease; }"
         st.error("⚠️ 【視覺異變】螢幕底層滲出無法洗刷的暗褐色墨暈印記...")
-        
     dynamic_css += "</style>"
     
     if has_anomaly:
@@ -272,7 +247,7 @@ else:
     st.write(output["story_text"])
     st.markdown("---")
 
-    st.subheader("🤔 你的抉擇：")
+    st.subheader("🤔 你的物理抉擇：")
     if st.button(output["option_A"]):
         run_turn(output["option_A"])
         st.rerun()
