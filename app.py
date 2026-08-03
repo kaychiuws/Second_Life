@@ -276,7 +276,7 @@ else:
         st.warning("⚠️ 【視覺異變】螢幕邊緣出現深度暗角，畫面色彩褪為灰白...")
     if s <= 35:
         has_anomaly = True
-        dynamic_css += "@keyframes bloodFlash { 0% { color: inherit; } 50% { color: #ff2b2b; text-shadow: 0 0 8px rgba(255, 0, 0, 0.8); } 100% { color: inherit; } } .stMarkdown p, .stMarkdown li { animation: bloodFlash 100s infinite; }"
+        dynamic_css += "@keyframes bloodFlash { 0% { color: inherit; } 50% { color: #ff2b2b; text-shadow: 0 0 8px rgba(255, 0, 0, 0.8); } 100% { color: inherit; } } .stMarkdown p, .stMarkdown li { animation: bloodFlash 1.5s infinite; }"
         st.warning("⚠️ 【視覺異變】排版錯位失調，關鍵字句泛起血色脈動...")
     if c >= 40:
         has_anomaly = True
