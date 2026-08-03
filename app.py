@@ -134,7 +134,7 @@ if not st.session_state.game_started:
         st.rerun()
             
 else:
-     = st.session_state.player_state
+     p_state = st.session_state.player_state
     
     if p_state["hidden_stats"]["health"] <= 0:
         st.error("【肉體枯竭】你在無盡的飢餓與肉體折磨中倒下，未能熬過這個時代。")
