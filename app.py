@@ -170,7 +170,7 @@ else:
         
         with st.spinner("⏳ 歷史的齒輪正在運轉，AI 正在生成故事..."):
             response = client.models.generate_content(
-                model='gemini-2.5-flash-lite',
+                model='gemini-3.1-flash-lite',
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     system_instruction=system_instruction,
