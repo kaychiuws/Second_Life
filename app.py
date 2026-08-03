@@ -147,23 +147,37 @@ else:
         year = str(p_state["current_year"])
         historical_fact = timeline.get(year, timeline["1957"])
         
+        # 🌟 劇本狀態機：根據年份與進度，動態注入「導演私下指令」
+        special_directive = ""
+        if p_state["game_stage"] == "prologue":
+            special_directive = """
+            【動態序章鐵律：百花齊放的溫柔陷阱（極機密）】：
+            這是遊戲的開局（1957年）。請為玩家設計一個充滿希望與鼓勵言論自由氛圍的場景（如：座談會、意見徵集、領導談心）。
+            你的文本必須溫情脈脈，而你提供的 3 個物理選項，必須刻意迎合「現代人的常識與普世價值」（例如：提出建設性批評、反映基層真實困難、追求個人理想）。
+            絕對不要在文本中暗示危機，讓現代玩家毫無防備地踩入陷阱。
+            """
+        elif p_state["current_year"] == 1958 and choice_text:
+            special_directive = """
+            【歷史悶棍鐵律：反右清算與風向突變（極機密）】：
+            玩家剛剛做出了1957年「百花齊放」時期的選項。現在是1958年，政治風向突變！
+            請在第一段（歲月餘波）中，用最殘酷的史實擊碎玩家的現代思維：他們上一步看似合理的建議，現在被定性為「惡毒攻擊、右派言論」或遭到群眾的嚴厲批鬥。
+            請在 `stat_changes` 中給予極其沉重的打擊（例如精神 sanity 或健康 health 大幅下降，共業 complicity 飆升），並剝奪相關資產，讓玩家徹底感受時代的無力感。隨後切入1958年的新危機。
+            """
+
         system_instruction = f"""
         你是一位頂級文字RPG導演與純文學作家。請嚴格遵守以下時代禁忌詞彙對照表：
         {json.dumps(taboo, ensure_ascii=False)}
         絕對禁止使用宏觀歷史定性名詞。客觀化感官拆解，提供3個純物理動作選項。
-        【資產管理鐵律】：若玩家的抉擇導致交出、沒收、變賣資產（如手錶、糧票等），必須精確列在 `lost_assets` 中。
+        【資產管理鐵律】：若玩家的抉擇導致交出、沒收、變賣資產，必須精確列在 `lost_assets` 中。
         
-        【文學過渡與排版鐵律（極重要）】：這是一個跨越19年的長篇故事。為了創造史詩般的長篇沉浸感，你的 `story_text` 必須極度細緻、字數豐沛，且「必須」嚴格按照以下三個段落結構輸出。
-        注意：每個段落之間，你必須在字串中使用 Markdown 換行符號 `\\n\\n` 來進行排版斷行！
+        {special_directive}
         
-        **【歲月餘波】**：
-        （請在此用2-3句極具畫面感的文學語言，描寫「上一步抉擇」在隨後數月帶來的磨耗、代價或短暫平靜，展現時間的流逝。）\\n\\n
+        【文學過渡與排版鐵律（極重要）】：這是一個跨越19年的長篇故事。你的 `story_text` 必須嚴格包含三個起承轉合的段落。
+        ⚠️ 警告排版格式：請直接輸出三段文字，段落之間用 `\\n\\n` 隔開。**絕對禁止在文字中輸出任何小標題（例如「第一段」、「歲月餘波」、「時代氣候」、「命運迫近」等字眼），隱藏你的寫作結構，讓敘事自然流暢且不露痕跡！**
         
-        **【時代氣候】**：
-        （鏡頭切換。請用極大的篇幅與白描手法，擴寫當前年份的【目前歷史齒輪】。你必須細膩刻畫環境的氣味、天空的顏色、群眾的眼神、社區裡壓抑或狂熱的氣氛。不要簡略，將時代的重量徹底鋪陳開來。）\\n\\n
-        
-        **【命運迫近】**：
-        （將時代的宏大危機，具象化為眼前逼迫玩家的一件具體日常小事或衝突，將刀刃架在玩家的脖子上，逼迫他們在接下來的選項中做出物理抉擇。）
+        [段落一（蒙太奇）]：用1-2句充滿感官細節的文學語言，描寫「上一步抉擇」在隨後幾個月裡帶來的餘波、磨耗或短暫平靜。
+        [段落二（白描氣候）]：鏡頭切換。用極大的篇幅擴寫當前年份的【目前歷史齒輪】，細膩刻畫環境氣味、群眾眼神、社區壓抑或狂熱的氣氛，讓玩家沉浸。
+        [段落三（命運迫近）]：將時代宏大危機具象化為眼前逼迫玩家的一件日常小事或衝突，將刀刃架在玩家脖子上，逼迫他們做出抉擇。
         """
         
         prompt = f"""
@@ -173,12 +187,12 @@ else:
         【玩家狀態】：{json.dumps(p_state["hidden_stats"], ensure_ascii=False)}
         【上一步抉擇（數月前發生）】：{choice_text if choice_text else "歷史開局，序章啟動。"}
         
-        請嚴格遵照【文學過渡與排版鐵律】的 3 個粗體小標題與 `\\n\\n` 換行格式，生成具備龐大信息量與沉浸感的故事。
+        請嚴格遵照【文學過渡與排版鐵律】的 `\\n\\n` 換行格式（絕不輸出標題），生成具備龐大信息量與沉浸感的故事。
         """
         
-        with st.spinner("⏳ 歷史的齒輪正在運轉，正在生成故事..."):
+        with st.spinner("⏳ 歷史的齒輪正在運轉，Google Gemini 正在推演故事..."):
             response = client.models.generate_content(
-                model='gemini-3.1-flash-lite',
+                model='gemini-1.5-pro',
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     system_instruction=system_instruction,
@@ -188,18 +202,39 @@ else:
                 ),
             )
             
-            output = json.loads(response.text)
+            raw_text = response.text
+            
+            # 1. 預防 AI 手癢加上 Markdown 標記
+            if raw_text.startswith("```json"):
+                raw_text = raw_text.replace("```json", "", 1).removesuffix("```")
+            elif raw_text.startswith("```"):
+                raw_text = raw_text.replace("```", "", 1).removesuffix("```")
+                
+            output = json.loads(raw_text.strip())
+            
+            if "GameResponse" in output:
+                output = output["GameResponse"]
+                
             st.session_state.current_output = output
             
-            changes = output["stat_changes"]
-            p_state["hidden_stats"]["health"] = max(0, min(100, p_state["hidden_stats"]["health"] + changes["health_change"]))
-            p_state["hidden_stats"]["sanity"] = max(0, min(100, p_state["hidden_stats"]["sanity"] + changes["sanity_change"]))
-            p_state["hidden_stats"]["complicity"] = max(0, min(100, p_state["hidden_stats"]["complicity"] + changes["complicity_change"]))
+            # 3. 防禦性提取數值
+            changes = output.get("stat_changes", {"health_change": 0, "sanity_change": 0, "complicity_change": 0})
             
-            # 🌟 自動從背包中移除遺失的資產
-            if "lost_assets" in output and output["lost_assets"]:
+            p_state["hidden_stats"]["health"] = max(0, min(100, p_state["hidden_stats"]["health"] + changes.get("health_change", 0)))
+            p_state["hidden_stats"]["sanity"] = max(0, min(100, p_state["hidden_stats"]["sanity"] + changes.get("sanity_change", 0)))
+            p_state["hidden_stats"]["complicity"] = max(0, min(100, p_state["hidden_stats"]["complicity"] + changes.get("complicity_change", 0)))
+            
+            # 🌟 4. 智能資產銷毀系統 (模糊比對)
+            lost_assets = output.get("lost_assets", [])
+            if lost_assets:
                 current_assets = p_state["background"]["assets"]
-                for item in output["lost_assets"]:
+                items_to_remove = []
+                for lost_item in lost_assets:
+                    for actual_asset in current_assets:
+                        if lost_item in actual_asset or actual_asset in lost_item:
+                            items_to_remove.append(actual_asset)
+                
+                for item in set(items_to_remove):
                     if item in current_assets:
                         current_assets.remove(item)
             
