@@ -1,7 +1,7 @@
 import os
 import json
 import streamlit as st
-from mistralai import Mistral
+from mistralai>=1.0.0 import Mistral
 from pydantic import BaseModel, Field
 
 st.set_page_config(page_title="1957-1976 歷史文字RPG", layout="centered")
