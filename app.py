@@ -190,9 +190,9 @@ else:
         請嚴格遵照【文學過渡與排版鐵律】的 `\\n\\n` 換行格式（絕不輸出標題），生成具備龐大信息量與沉浸感的故事。
         """
         
-        with st.spinner("⏳ 歷史的齒輪正在運轉，Google Gemini 正在推演故事..."):
+        with st.spinner("⏳ 歷史的齒輪正在運轉，正在推演故事..."):
             response = client.models.generate_content(
-                model='gemini-3.1-pro',
+                model='gemini-3.1-flash-lite',
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     system_instruction=system_instruction,
