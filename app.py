@@ -1,21 +1,21 @@
 import os
 import json
 import streamlit as st
-from mistralai.client import Mistral
+from google import genai
+from google.genai import types
 from pydantic import BaseModel, Field
 
 st.set_page_config(page_title="1957-1976 歷史文字RPG", layout="centered")
 st.title("📜 第二人生：歷史的齒輪")
 
 st.sidebar.header("🔑 系統設定")
-api_key_input = st.sidebar.text_input("請輸入你的 Mistral API Key", type="password")
+api_key_input = st.sidebar.text_input("請輸入你的 Google AI Studio API Key", type="password")
 
 if not api_key_input:
     st.warning("請先在左側欄位輸入您的 API Key 才能啟動遊戲。")
     st.stop()
 
-# 初始化 Mistral 客戶端
-client = Mistral(api_key=api_key_input)
+client = genai.Client(api_key=api_key_input)
 
 @st.cache_data
 def load_configs():
@@ -54,6 +54,7 @@ class NPCUpdates(BaseModel):
     dependent: NPCUpdate
     ally: NPCUpdate
 
+# 🌟 升級版 Response 結構，加入 lost_assets
 class GameResponse(BaseModel):
     story_text: str 
     option_A: str 
@@ -146,21 +147,15 @@ else:
         year = str(p_state["current_year"])
         historical_fact = timeline.get(year, timeline["1957"])
         
-        # 取得我們定義的 JSON 結構圖，確保 Mistral 知道要怎麼回傳資料
-        schema_json = GameResponse.model_json_schema()
-        
         system_instruction = f"""
         你是一位頂級文字RPG導演與純文學作家。請嚴格遵守以下時代禁忌詞彙對照表：
         {json.dumps(taboo, ensure_ascii=False)}
         絕對禁止使用宏觀歷史定性名詞。客觀化感官拆解，提供3個純物理動作選項。
         【資產管理鐵律】：若玩家的抉擇導致交出、沒收、變賣資產（如手錶、糧票等），必須精確列在 `lost_assets` 中。
         
-        【文學過渡鐵律（極重要）】：這是一個跨越19年的長篇故事，每個回合之間相隔數月甚至一年。你的 `story_text` 必須分為兩段(但無需告訴讀者段落的分段名稱)：
-        [第一段：歲月餘波（蒙太奇）]：用1-2句充滿感官細節的文學語言，描寫「上一步抉擇」在隨後幾個月裡的餘波，讓玩家感受時間流逝（例如：「那隻交出去的手錶換來了半年的平靜，直到初冬的霜凍爬上窗櫺...」）。
+        【文學過渡鐵律（極重要）】：這是一個跨越19年的長篇故事，每個回合之間相隔數月甚至一年。為了避免敘事急促，你的 `story_text` 必須嚴格分為兩個段落：
+        [第一段：歲月餘波（蒙太奇）]：用1-2句充滿感官細節的文學語言，描寫「上一步抉擇」在隨後幾個月裡帶來的餘波、生活的磨耗或是短暫的平靜。讓玩家感受到時間的流逝（例如：「那隻交出去的手錶換來了半年的平靜，直到初冬的霜凍爬上窗櫺...」）。
         [第二段：齒輪轉動（當下危機）]：鏡頭切換，以冷峻的白描手法切入當前年份的【目前歷史齒輪】，將日常的異狀推到玩家面前，逼迫他們做出新的物理抉擇。
-
-        【嚴格輸出格式】：你必須且只能輸出一個 JSON 格式的物件，請勿加入任何 Markdown 標記，必須嚴格符合以下結構：
-        {json.dumps(schema_json, ensure_ascii=False)}
         """
         
         prompt = f"""
@@ -170,50 +165,33 @@ else:
         【玩家狀態】：{json.dumps(p_state["hidden_stats"], ensure_ascii=False)}
         【上一步抉擇（數月前發生）】：{choice_text if choice_text else "歷史開局，序章啟動。"}
         
-        請依據【文學過渡鐵律】與【JSON 輸出格式】生成具有時間厚度與沉浸感的故事、選項與狀態更新。
+        請依據【文學過渡鐵律】生成具有時間厚度與沉浸感的故事、選項與狀態更新。
         """
         
-        with st.spinner("⏳ 歷史的齒輪正在運轉，正在推演故事..."):
-            # 這裡改成 Mistral 的呼叫語法
-            response = client.chat.complete(
-                model="mistral-large-latest", # 使用 Mistral 最強的模型確保文學品質
-                messages=[
-                    {"role": "system", "content": system_instruction},
-                    {"role": "user", "content": prompt}
-                ],
-                response_format={"type": "json_object"}, # 強制 Mistral 只講 JSON
-                temperature=0.75,
+        with st.spinner("⏳ 歷史的齒輪正在運轉，AI 正在生成故事..."):
+            response = client.models.generate_content(
+                model='gemini-1.5-pro',
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=system_instruction,
+                    response_mime_type="application/json",
+                    response_schema=GameResponse,
+                    temperature=0.75,
+                ),
             )
             
-            # 解析 Mistral 回傳的文字
-            raw_text = response.choices[0].message.content
-            
-            # 1. 預防 AI 手癢加上 Markdown 標記
-            if raw_text.startswith("```json"):
-                raw_text = raw_text.replace("```json", "", 1).removesuffix("```")
-            elif raw_text.startswith("```"):
-                raw_text = raw_text.replace("```", "", 1).removesuffix("```")
-                
-            output = json.loads(raw_text.strip())
-            
-            # 2. 預防 AI 多包了一層外殼 (有時候 AI 會輸出 {"GameResponse": {...}})
-            if "GameResponse" in output:
-                output = output["GameResponse"]
-                
+            output = json.loads(response.text)
             st.session_state.current_output = output
             
-            # 3. 防禦性讀取：使用 .get() 確保就算 AI 漏寫，也會給予 0 的預設值，防止 KeyError 當機
-            changes = output.get("stat_changes", {"health_change": 0, "sanity_change": 0, "complicity_change": 0})
+            changes = output["stat_changes"]
+            p_state["hidden_stats"]["health"] = max(0, min(100, p_state["hidden_stats"]["health"] + changes["health_change"]))
+            p_state["hidden_stats"]["sanity"] = max(0, min(100, p_state["hidden_stats"]["sanity"] + changes["sanity_change"]))
+            p_state["hidden_stats"]["complicity"] = max(0, min(100, p_state["hidden_stats"]["complicity"] + changes["complicity_change"]))
             
-            p_state["hidden_stats"]["health"] = max(0, min(100, p_state["hidden_stats"]["health"] + changes.get("health_change", 0)))
-            p_state["hidden_stats"]["sanity"] = max(0, min(100, p_state["hidden_stats"]["sanity"] + changes.get("sanity_change", 0)))
-            p_state["hidden_stats"]["complicity"] = max(0, min(100, p_state["hidden_stats"]["complicity"] + changes.get("complicity_change", 0)))
-            
-            # 🌟 自動從背包中移除遺失的資產 (同樣使用 .get 防禦性讀取)
-            lost_assets = output.get("lost_assets", [])
-            if lost_assets:
+            # 🌟 自動從背包中移除遺失的資產
+            if "lost_assets" in output and output["lost_assets"]:
                 current_assets = p_state["background"]["assets"]
-                for item in lost_assets:
+                for item in output["lost_assets"]:
                     if item in current_assets:
                         current_assets.remove(item)
             
@@ -235,7 +213,6 @@ else:
     for asset in p_state["background"]["assets"]:
         st.sidebar.markdown(f"- {asset}")
 
-    # 前端動態視覺異變 CSS
     h, s, c = p_state["hidden_stats"]["health"], p_state["hidden_stats"]["sanity"], p_state["hidden_stats"]["complicity"]
     
     dynamic_css = "<style>"
