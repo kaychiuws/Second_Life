@@ -336,9 +336,11 @@ else:
                 text-shadow: none; 
             }
         }
-        .stMarkdown p, .stMarkdown li { 
-            color: #ff4d4d !important; /* 強制覆蓋原本字體顏色 */
-            animation: bloodGlitch 4s infinite normal; /* 每4秒發作一次，發作時間極短 */
+        /* 🌟 加上 [data-testid="stMain"] 限制只在主畫面發作，放過側邊欄的資產！ */
+        [data-testid="stMain"] .stMarkdown p, 
+        [data-testid="stMain"] .stMarkdown li { 
+            color: #ff4d4d !important; 
+            animation: bloodGlitch 4s infinite normal; 
         }
         """
         st.warning("⚠️ 【視覺異變】排版錯位失調，文字彷彿被撕裂般抽搐...")
