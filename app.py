@@ -178,7 +178,7 @@ else:
         你是一位頂級文字RPG導演與純文學作家。請嚴格遵守以下時代禁忌詞彙對照表：
         {json.dumps(taboo, ensure_ascii=False)}
         絕對禁止使用宏觀歷史定性名詞。客觀化感官拆解，提供3個純物理動作選項。
-        【資產管理鐵律】：若玩家的抉擇導致交出、沒收、變賣資產，必須精確列在 `lost_assets` 中。
+        【資產同步鐵律（極其重要）】：請務必檢查【上一步抉擇】。只要玩家選擇了交出、沒收、變賣，必須精確列在 `lost_assets` 中。如果本回合沒有失去資產，你必須保持 `lost_assets` 為空陣列 `[]`，絕對不可將玩家仍擁有的資產填入！
         
         {special_directive}
         
@@ -236,7 +236,8 @@ else:
             
             # 🌟 4. 智能資產銷毀系統 (模糊比對)
             lost_assets = output.get("lost_assets", [])
-            if lost_assets:
+            # 防呆機制：在序章（生成第一回合故事時），玩家尚未做出選擇，強制忽略 AI 的沒收幻覺
+            if lost_assets and p_state["game_stage"] != "prologue":
                 current_assets = p_state["background"]["assets"]
                 items_to_remove = []
                 for lost_item in lost_assets:
@@ -276,7 +277,7 @@ else:
         st.warning("⚠️ 【視覺異變】螢幕邊緣出現深度暗角，畫面色彩褪為灰白...")
     if s <= 35:
         has_anomaly = True
-        dynamic_css += "@keyframes bloodFlash { 0% { color: inherit; } 50% { color: #ff2b2b; text-shadow: 0 0 8px rgba(255, 0, 0, 0.8); } 100% { color: inherit; } } .stMarkdown p, .stMarkdown li { animation: bloodFlash 1.5s infinite; }"
+        dynamic_css += "@keyframes bloodFlash { 0% { color: inherit; } 50% { color: #ff2b2b; text-shadow: 0 0 8px rgba(255, 0, 0, 0.8); } 100% { color: inherit; } } .stMarkdown p, .stMarkdown li { animation: bloodFlash 100s infinite; }"
         st.warning("⚠️ 【視覺異變】排版錯位失調，關鍵字句泛起血色脈動...")
     if c >= 40:
         has_anomaly = True
